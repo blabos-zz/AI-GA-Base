@@ -68,10 +68,11 @@ sub new {
     };
 
     # Genome code
-    no strict;
     croak 'You must provide a valid AI::GA::Genome class'
       unless exists $args->{'genome'}
       && $args->{'genome'}->isa('AI::GA::Genome::Base');
+
+    $atts->{'_genome'} = $args->{'genome'};
 
     foreach my $op ( keys %AI::GA::Genome::Base::operators ) {
         if ( ref $AI::GA::Genome::Base::operators{$op} eq 'CODE' ) {
@@ -83,14 +84,10 @@ sub new {
         }
     }
 
-    $atts->{'_new_individual'} = sub {
-        return ( $args->{'genome'} . '::new' )->( $args->{'genome'} );
-    };
-    use strict;
-
     # Genetic operators rates
     croak 'You must provide genetic operator rates'
       unless keys %{ $args->{'operators'} };
+
     foreach my $op ( keys %{ $args->{'operators'} } ) {
         $atts->{'_operators'}->{$op}->{'rate'} = $args->{'operators'}->{$op};
     }
@@ -149,9 +146,8 @@ construction.
 
 sub init {
     my $self = shift;
-
     for my $i ( 0 .. $self->pop_size() - 1 ) {
-        $self->{'_pop'}->[$i] = $self->{'_new_individual'}->();
+        $self->{'_pop'}->[$i] = $self->{'_genome'}->new();
         $self->{'_pop'}->[$i]->init;
     }
 
@@ -416,7 +412,7 @@ Returns the fittest individual of this population.
 
 sub fittest {
     my $self = shift;
-    
+
     return $self->population()->[0];
 }
 
